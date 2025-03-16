@@ -25,7 +25,7 @@ func Execute() error {
 	var rootCmd = &cobra.Command{
 		Use:   "crawler",
 		Short: "GitHub workflow crawler",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			switch logLevel {
 			case "info":
 				zerolog.SetGlobalLevel(zerolog.InfoLevel)
@@ -37,9 +37,15 @@ func Execute() error {
 				log.Error().Msgf("Invalid log level: %s", logLevel)
 			}
 
-			if err := run(); err != nil {
-				log.Error().Msgf("Error running command: %v", err)
+			if token == "" {
+				return fmt.Errorf("GitHub token is required")
 			}
+
+			if err := run(); err != nil {
+				return fmt.Errorf("Error running crawler: %v", err)
+			}
+
+			return nil
 		},
 	}
 
@@ -71,7 +77,12 @@ func run() error {
 	for _, rule := range cfg.Rules {
 		log.Info().Str("Rule", rule.Name).Msg("Processing rule")
 
-		codeResults, err := githubClient.SearchWorkflows(rule.Query, orgName)
+		query := rule.Query
+		if orgName != "" {
+			query = fmt.Sprintf("%s org:%s", rule.Query, orgName)
+		}
+
+		codeResults, err := githubClient.SearchWorkflows(query)
 		if err != nil {
 			log.Error().Msgf("Error searching workflows: %v", err)
 			return fmt.Errorf("Error searching workflows: %v", err)
@@ -82,7 +93,7 @@ func run() error {
 			repo := result.GetRepository().GetName()
 			workflowFile := strings.TrimPrefix(result.GetPath(), ".github/workflows/")
 
-			log.Debug().Str("Org", owner).Str("Repo", repo).Str("Workflow", workflowFile).Msg("Processing workflow")
+			log.Info().Str("Org", owner).Str("Repo", repo).Str("Workflow", workflowFile).Msg("Processing workflow")
 
 			run, err := githubClient.GetLatestSuccessfulWorkflowRun(ctx, owner, repo, workflowFile)
 			if err != nil || run == nil {
@@ -90,7 +101,7 @@ func run() error {
 				continue
 			}
 
-			log.Info().Str("Workflow", workflowFile).Int64("Run", run.GetID()).Msg("Processing run")
+			log.Debug().Str("Workflow", workflowFile).Int64("Run", run.GetID()).Msg("Processing run")
 
 			logURL, err := githubClient.GetJobLogs(owner, repo, run.GetID())
 			if err != nil {

@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -34,10 +33,8 @@ func New(ctx context.Context, token string) *GitHub {
 	}
 }
 
-func (g *GitHub) SearchWorkflows(query string, org string) (<-chan *github.CodeResult, error) {
+func (g *GitHub) SearchWorkflows(query string) (<-chan *github.CodeResult, error) {
 	ch := make(chan *github.CodeResult)
-
-	query = fmt.Sprintf("%s org:%s", query, org)
 
 	go func() {
 		defer close(ch)
