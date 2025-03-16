@@ -1,4 +1,3 @@
-
 output:
   method: file
   filename: output.json

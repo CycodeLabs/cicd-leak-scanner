@@ -126,8 +126,6 @@ func run() error {
 				continue
 			}
 
-			log.Info().Str("Match", matches[1]).Msg("Found match")
-
 			for _, dec := range rule.Decoders {
 				decoder, err := decoder.New(dec.Id)
 				if err != nil {
