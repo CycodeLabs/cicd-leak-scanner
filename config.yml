@@ -1,0 +1,13 @@
+
+output:
+  method: file
+  filename: output.json
+
+rules:
+  - name: Detect base64 secrets leaked by tj-actions/changed-files
+    query: tj-actions/changed-files AND secrets. language:yaml path:.github/workflows
+    regex: >
+      ##\[group\]changed-files\s*\r?\n\d{4}-\d{2}-\d{2}T[\d:.]+Z\s+([A-Za-z0-9+/=]+)
+    decoders:
+      - id: base64_decode
+        repeat: 2
