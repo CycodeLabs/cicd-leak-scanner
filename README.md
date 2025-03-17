@@ -19,6 +19,12 @@ cd cicd-leak-scanner
 go build -o cicd-leak-scanner .
 ```
 
+In some cases (e.g., building in a minimal Docker environment or a platform without CGO support), specify `CGO_ENABLED=0`:
+
+``` bash
+CGO_ENABLED=0 go build -o cicd-leak-scanner .
+```
+
 
 ## Usage
 
