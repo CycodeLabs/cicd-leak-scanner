@@ -7,8 +7,13 @@ import (
 )
 
 type Config struct {
-	Output *Output `mapstructure:"output"`
-	Rules  []*Rule `mapstructure:"rules"`
+	Scanner *Scanner `mapstructure:"scanner"`
+	Output  *Output  `mapstructure:"output"`
+	Rules   []*Rule  `mapstructure:"rules"`
+}
+
+type Scanner struct {
+	WorkflowRunsToScan int `mapstructure:"workflow-runs-to-scan"`
 }
 
 type Output struct {

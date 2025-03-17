@@ -1,3 +1,6 @@
+scanner:
+  workflow-runs-to-scan: 3
+
 output:
   method: file
   filename: output.json

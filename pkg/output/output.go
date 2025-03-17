@@ -8,7 +8,7 @@ import (
 )
 
 type Output interface {
-	Write(org string, repo string, workflow string, secret string) error
+	Write(org string, repo string, workflow string, run int64, secret string) error
 }
 
 type OutputConfig struct {

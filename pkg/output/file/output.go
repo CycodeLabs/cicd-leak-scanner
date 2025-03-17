@@ -14,8 +14,8 @@ func New(filename string) (*FileOutput, error) {
 	return &FileOutput{filename: filename}, nil
 }
 
-func (f *FileOutput) Write(org string, repo string, workflow string, secret string) error {
-	var results map[string]map[string][]string
+func (f *FileOutput) Write(org string, repo string, workflow string, run int64, secret string) error {
+	var results map[string]map[string]map[int64][]string
 
 	if _, err := os.Stat(f.filename); err == nil {
 		file, err := os.Open(f.filename)
@@ -28,16 +28,20 @@ func (f *FileOutput) Write(org string, repo string, workflow string, secret stri
 			return fmt.Errorf("Failed to decode JSON: %v", err)
 		}
 	} else {
-		results = make(map[string]map[string][]string)
+		results = make(map[string]map[string]map[int64][]string)
 	}
 
 	identifier := fmt.Sprintf("%s/%s", org, repo)
 
 	if _, ok := results[identifier]; !ok {
-		results[identifier] = make(map[string][]string)
+		results[identifier] = make(map[string]map[int64][]string)
 	}
 
-	results[identifier][workflow] = append(results[identifier][workflow], secret)
+	if _, ok := results[identifier][workflow]; !ok {
+		results[identifier][workflow] = make(map[int64][]string)
+	}
+
+	results[identifier][workflow][run] = append(results[identifier][workflow][run], secret)
 
 	file, err := os.Create(f.filename)
 	if err != nil {

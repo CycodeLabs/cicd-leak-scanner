@@ -46,6 +46,9 @@ Scan Specific Repository:
 The scanner uses a configuration file to define the rules for detecting leaks. The configuration file is located at `config.yaml` and can be customized to detect specific patterns or keywords.
 
 ``` yaml
+scanner:
+  workflow-runs-to-scan: 3
+
 output:
   method: file
   filename: output.json
@@ -57,7 +60,6 @@ rules:
       ##\[group\]changed-files\s*\r?\n\d{4}-\d{2}-\d{2}T[\d:.]+Z\s+([A-Za-z0-9+/=]+)
     decoders:
       - id: base64_decode
-        repeat: 2
 ```
 
 ## Contributing

@@ -101,51 +101,53 @@ func run() error {
 
 			log.Info().Str("Org", owner).Str("Repo", repo).Str("Workflow", workflowFile).Msg("Processing workflow")
 
-			run, err := githubClient.GetLatestSuccessfulWorkflowRun(ctx, owner, repo, workflowFile)
+			runs, err := githubClient.GetLatestSuccessfulWorkflowRuns(ctx, owner, repo, workflowFile, cfg.Scanner.WorkflowRunsToScan)
 			if err != nil || run == nil {
 				log.Warn().Msgf("No successful runs found for %s/%s", owner, repo)
 				continue
 			}
 
-			log.Debug().Str("Workflow", workflowFile).Int64("Run", run.GetID()).Msg("Processing run")
+			for _, run := range runs {
+				log.Debug().Str("Workflow", workflowFile).Int64("Run", run.GetID()).Msg("Processing run")
 
-			logURL, err := githubClient.GetJobLogs(owner, repo, run.GetID())
-			if err != nil {
-				log.Warn().Msgf("Error fetching log URL: %v", err)
-				continue
-			}
-			log.Debug().Msgf("Fetching logs from %s", logURL)
-
-			logContent, err := githubClient.GetJobLogsContent(logURL)
-			if err != nil {
-				log.Printf("Error fetching log content: %v", err)
-				continue
-			}
-
-			log.Debug().Int("logContent", len(logContent)).Msg("Fetched log content")
-
-			pattern := regexp.MustCompile(rule.Regex)
-			matches := pattern.FindStringSubmatch(logContent)
-			if len(matches) == 0 {
-				continue
-			}
-
-			for _, dec := range rule.Decoders {
-				decoder, err := decoder.New(dec.Id)
+				logURL, err := githubClient.GetJobLogs(owner, repo, run.GetID())
 				if err != nil {
-					log.Warn().Msgf("Error creating decoder: %v", err)
+					log.Warn().Msgf("Error fetching log URL: %v", err)
+					continue
+				}
+				log.Debug().Msgf("Fetching logs from %s", logURL)
+
+				logContent, err := githubClient.GetJobLogsContent(logURL)
+				if err != nil {
+					log.Printf("Error fetching log content: %v", err)
 					continue
 				}
 
-				decoded, err := decoder.Decode(matches[1], dec.Repeat)
-				if err != nil {
-					log.Warn().Msgf("Error decoding secret: %v", err)
+				log.Debug().Int("logContent", len(logContent)).Msg("Fetched log content")
+
+				pattern := regexp.MustCompile(rule.Regex)
+				matches := pattern.FindStringSubmatch(logContent)
+				if len(matches) == 0 {
 					continue
 				}
 
-				log.Info().Msg("Found secret")
-				if err := outputClient.Write(owner, repo, workflowFile, decoded); err != nil {
-					log.Warn().Msgf("Error writing secret: %v", err)
+				for _, dec := range rule.Decoders {
+					decoder, err := decoder.New(dec.Id)
+					if err != nil {
+						log.Warn().Msgf("Error creating decoder: %v", err)
+						continue
+					}
+
+					decoded, err := decoder.Decode(matches[1], dec.Repeat)
+					if err != nil {
+						log.Warn().Msgf("Error decoding secret: %v", err)
+						continue
+					}
+
+					log.Info().Msg("Found secret")
+					if err := outputClient.Write(owner, repo, workflowFile, run.GetID(), decoded); err != nil {
+						log.Warn().Msgf("Error writing secret: %v", err)
+					}
 				}
 			}
 		}

@@ -87,18 +87,39 @@ func (g *GitHub) SearchWorkflows(query string) (<-chan *github.CodeResult, error
 	return ch, nil
 }
 
-func (g *GitHub) GetLatestSuccessfulWorkflowRun(ctx context.Context, owner, repo, workflowFileName string) (*github.WorkflowRun, error) {
-	runs, _, err := g.client.Actions.ListWorkflowRunsByFileName(ctx, owner, repo, workflowFileName, &github.ListWorkflowRunsOptions{
-		Status: "success", ListOptions: github.ListOptions{
-			PerPage: 1,
-		}},
-	)
+func (g *GitHub) GetLatestSuccessfulWorkflowRuns(ctx context.Context, owner, repo, workflowFileName string, numRuns int) ([]*github.WorkflowRun, error) {
+	var allRuns []*github.WorkflowRun
+	perPage := 100
+	pages := (numRuns + perPage - 1) / perPage
 
-	if err != nil || len(runs.WorkflowRuns) == 0 {
-		return nil, err
+	for page := 1; page <= pages; page++ {
+		log.Trace().Int("Page", page).Msg("Scanning workflow runs")
+
+		remaining := numRuns - len(allRuns)
+		if remaining < perPage {
+			perPage = remaining
+		}
+
+		runs, _, err := g.client.Actions.ListWorkflowRunsByFileName(ctx, owner, repo, workflowFileName, &github.ListWorkflowRunsOptions{
+			Status: "success",
+			ListOptions: github.ListOptions{
+				PerPage: perPage,
+				Page:    page,
+			},
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		allRuns = append(allRuns, runs.WorkflowRuns...)
+
+		if len(runs.WorkflowRuns) < perPage {
+			break
+		}
 	}
 
-	return runs.WorkflowRuns[0], nil
+	return allRuns, nil
 }
 
 func (g *GitHub) GetJobLogs(owner, repo string, runID int64) (string, error) {
