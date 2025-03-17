@@ -18,13 +18,14 @@ import (
 var (
 	logLevel string
 	orgName  string
+	repoName string
 	token    string
 )
 
 func Execute() error {
 	var rootCmd = &cobra.Command{
-		Use:   "crawler",
-		Short: "GitHub workflow crawler",
+		Use:   "cicd-leak-scanner",
+		Short: "CI/CD Leak Scanner",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			switch logLevel {
 			case "info":
@@ -49,9 +50,10 @@ func Execute() error {
 		},
 	}
 
-	rootCmd.Flags().StringVarP(&logLevel, "log-level", "l", "info", "Log level")
+	rootCmd.Flags().StringVarP(&logLevel, "log-level", "l", "info", "Log Level (info, debug, trace)")
 	rootCmd.Flags().StringVarP(&token, "github-token", "t", "", "GitHub token")
 	rootCmd.Flags().StringVarP(&orgName, "org-name", "o", "", "GitHub organization")
+	rootCmd.Flags().StringVarP(&repoName, "repo-name", "r", "", "GitHub repository (e.g. example-org/example-repo)")
 
 	if err := rootCmd.Execute(); err != nil {
 		return fmt.Errorf("Error executing command: %v", err)
@@ -79,7 +81,11 @@ func run() error {
 
 		query := rule.Query
 		if orgName != "" {
-			query = fmt.Sprintf("%s org:%s", rule.Query, orgName)
+			query = fmt.Sprintf("%s org:%s", query, orgName)
+		}
+
+		if repoName != "" {
+			query = fmt.Sprintf("%s repo:%s", query, repoName)
 		}
 
 		codeResults, err := githubClient.SearchWorkflows(query)

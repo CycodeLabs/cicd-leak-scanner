@@ -93,6 +93,7 @@ func (g *GitHub) GetLatestSuccessfulWorkflowRun(ctx context.Context, owner, repo
 			PerPage: 1,
 		}},
 	)
+
 	if err != nil || len(runs.WorkflowRuns) == 0 {
 		return nil, err
 	}
