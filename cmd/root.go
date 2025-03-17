@@ -143,7 +143,7 @@ func run() error {
 					continue
 				}
 
-				log.Info().Str("Secret", decoded).Msg("Found secret")
+				log.Info().Msg("Found secret")
 				if err := outputClient.Write(owner, repo, workflowFile, decoded); err != nil {
 					log.Warn().Msgf("Error writing secret: %v", err)
 				}
