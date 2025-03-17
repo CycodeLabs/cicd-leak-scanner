@@ -138,7 +138,9 @@ func (g *GitHub) GetLatestSuccessfulWorkflowRuns(ctx context.Context, owner, rep
 func (g *GitHub) GetJobLogs(owner, repo string, runID int64) (string, error) {
 	url, res, err := g.client.Actions.GetWorkflowRunLogs(context.Background(), owner, repo, runID, maxRedirects)
 	if res.StatusCode == http.StatusGone {
-		return "", fmt.Errorf("Logs are no longer available for run %d", runID)
+		return "", &WorkflowRunLogsExpiredError{
+			WorkflowRunId: runID,
+		}
 	}
 
 	if err != nil {
