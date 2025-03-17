@@ -1,6 +1,6 @@
-# CICD Leak Scanner
+# CI/CD Leak Scanner
 
-CICD Leak Scanner is a security tool designed to scan build logs from CI/CD pipelines to identify leaks of sensitive data, tokens, or credentials.
+CI/CD Leak Scanner is a security tool designed to scan build logs from CI/CD pipelines to identify leaks of sensitive data, tokens, or credentials.
 
 Due to the recent malicious actions involving [tj-actions/changed-files](https://cycode.com/blog/github-action-tj-actions-changed-files-supply-chain-attack-the-complete-guide/), we've created this tool to empower security teams to proactively scan and determine if their CI/CD pipelines have been compromised.
 
