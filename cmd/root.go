@@ -48,10 +48,6 @@ func Execute() error {
 				log.Error().Msgf("Invalid log level: %s", logLevel)
 			}
 
-			if token == "" {
-				return fmt.Errorf("GitHub token is required")
-			}
-
 			if err := run(); err != nil {
 				return fmt.Errorf("Error running crawler: %v", err)
 			}
@@ -64,6 +60,8 @@ func Execute() error {
 	rootCmd.Flags().StringVarP(&token, "github-token", "t", "", "GitHub token")
 	rootCmd.Flags().StringVarP(&orgName, "org-name", "o", "", "GitHub organization")
 	rootCmd.Flags().StringVarP(&repoName, "repo-name", "r", "", "GitHub repository (e.g. example-org/example-repo)")
+
+	rootCmd.MarkFlagRequired("github-token")
 
 	if err := rootCmd.Execute(); err != nil {
 		return fmt.Errorf("Error executing command: %v", err)
