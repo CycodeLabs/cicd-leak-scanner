@@ -110,7 +110,6 @@ func run() error {
 
 		codeResults, err := githubClient.SearchWorkflows(query)
 		if err != nil {
-			log.Error().Msgf("Error searching workflows: %v", err)
 			return fmt.Errorf("Error searching workflows: %v", err)
 		}
 
@@ -135,7 +134,7 @@ func run() error {
 			log.Info().Msgf("Scanning last %d successful runs", len(runs))
 
 			for _, run := range runs {
-				log.Debug().Str("Workflow", workflowFile).Int64("Run", run.GetID()).Msg("Processing run")
+				log.Debug().Str("Workflow", workflowFile).Int64("RunID", run.GetID()).Msg("Processing run")
 				runsScanned[run.GetID()] = true
 
 				logURL, err := githubClient.GetJobLogs(owner, repo, run.GetID())
@@ -151,7 +150,7 @@ func run() error {
 					continue
 				}
 
-				log.Info().Int("logContent", len(logContent)).Msgf("Fetched log content for run %d", run.GetID())
+				log.Info().Int("LogContentLen", len(logContent)).Msgf("Fetched log content for run %d", run.GetID())
 
 				pattern := regexp.MustCompile(rule.Regex)
 				matches := pattern.FindStringSubmatch(logContent)
