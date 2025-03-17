@@ -16,6 +16,6 @@ func New(id string) (Decoder, error) {
 	case base64.Id:
 		return base64.New()
 	default:
-		return nil, fmt.Errorf("unknown analyzer: %s", id)
+		return nil, fmt.Errorf("unknown decoder: %s", id)
 	}
 }
