@@ -108,7 +108,6 @@ func run() error {
 				log.Warn().Msgf("Error fetching log URL: %v", err)
 				continue
 			}
-
 			log.Debug().Msgf("Fetching logs from %s", logURL)
 
 			logContent, err := githubClient.GetJobLogsContent(logURL)
@@ -120,7 +119,6 @@ func run() error {
 			log.Debug().Int("logContent", len(logContent)).Msg("Fetched log content")
 
 			pattern := regexp.MustCompile(rule.Regex)
-
 			matches := pattern.FindStringSubmatch(logContent)
 			if len(matches) == 0 {
 				continue
@@ -133,7 +131,7 @@ func run() error {
 					continue
 				}
 
-				decoded, err := decoder.Analyze(matches[1], dec.Repeat)
+				decoded, err := decoder.Decode(matches[1], dec.Repeat)
 				if err != nil {
 					log.Warn().Msgf("Error decoding secret: %v", err)
 					continue

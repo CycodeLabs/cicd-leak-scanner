@@ -8,7 +8,7 @@ import (
 
 type Decoder interface {
 	Id() string
-	Analyze(input string, repeat int) (string, error)
+	Decode(input string, repeat int) (string, error)
 }
 
 func New(id string) (Decoder, error) {

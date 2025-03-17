@@ -15,7 +15,7 @@ func New() (*Base64, error) {
 	return &Base64{}, nil
 }
 
-func (b *Base64) Analyze(input string, repeat int) (string, error) {
+func (b *Base64) Decode(input string, repeat int) (string, error) {
 	for i := 0; i < repeat; i++ {
 		decoded, err := base64.StdEncoding.DecodeString(input)
 		if err != nil {

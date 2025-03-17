@@ -105,6 +105,7 @@ func (g *GitHub) GetJobLogs(owner, repo string, runID int64) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return url.String(), nil
 }
 
