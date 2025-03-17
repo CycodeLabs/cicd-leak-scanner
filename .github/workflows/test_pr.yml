@@ -1,0 +1,29 @@
+name: Test PR
+
+on: [pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: cycodelabs/cimon-action@v0
+        with:
+          client-id: ${{ secrets.CIMON_CLIENT_ID }}
+          secret: ${{ secrets.CIMON_SECRET }}
+          prevent: true
+          allowed-hosts: >
+            proxy.golang.org
+            sum.golang.org
+            storage.googleapis.com
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: go build -o cicd-leak-scanner .
+
+      - name: Run
+        run: ./cicd-leak-scanner --help
