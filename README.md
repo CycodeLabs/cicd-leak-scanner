@@ -66,6 +66,7 @@ rules:
       ##\[group\]changed-files\s*\r?\n\d{4}-\d{2}-\d{2}T[\d:.]+Z\s+([A-Za-z0-9+/=]+)
     decoders:
       - id: base64_decode
+        repeat: 2
 ```
 
 ## Contributing
