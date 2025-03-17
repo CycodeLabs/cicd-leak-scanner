@@ -3,13 +3,17 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"regexp"
 	"strings"
+	"syscall"
 
 	"github.com/CycodeLabs/cicd-leak-scanner/pkg/config"
 	"github.com/CycodeLabs/cicd-leak-scanner/pkg/decoder"
 	"github.com/CycodeLabs/cicd-leak-scanner/pkg/github"
 	"github.com/CycodeLabs/cicd-leak-scanner/pkg/output"
+	"github.com/CycodeLabs/cicd-leak-scanner/pkg/output/stdout"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -20,6 +24,12 @@ var (
 	orgName  string
 	repoName string
 	token    string
+
+	orgScanned      = make(map[string]bool)
+	repoScanned     = make(map[string]bool)
+	workflowScanned = make(map[string]bool)
+	secretsFound    = make(map[string]bool)
+	runsScanned     = make(map[int64]bool)
 )
 
 func Execute() error {
@@ -63,9 +73,19 @@ func Execute() error {
 }
 
 func run() error {
-	ctx := context.Background()
-	githubClient := github.New(ctx, token)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-sigChan
+		log.Info().Msg("Received interrupt signal, shutting down gracefully")
+		cancel()
+	}()
+
+	githubClient := github.New(ctx, token)
 	cfg, err := config.New()
 	if err != nil {
 		return fmt.Errorf("Error loading config: %v", err)
@@ -96,19 +116,27 @@ func run() error {
 
 		for result := range codeResults {
 			owner := result.GetRepository().GetOwner().GetLogin()
-			repo := result.GetRepository().GetName()
-			workflowFile := strings.TrimPrefix(result.GetPath(), ".github/workflows/")
+			orgScanned[owner] = true
 
-			log.Info().Str("Org", owner).Str("Repo", repo).Str("Workflow", workflowFile).Msg("Processing workflow")
+			repo := result.GetRepository().GetName()
+			repoScanned[repo] = true
+
+			workflowFile := strings.TrimPrefix(result.GetPath(), ".github/workflows/")
+			workflowScanned[workflowFile] = true
+
+			log.Info().Str("Org", owner).Str("Repo", repo).Str("Workflow", workflowFile).Msg("Found workflow which matched the rule conditions")
 
 			runs, err := githubClient.GetLatestSuccessfulWorkflowRuns(ctx, owner, repo, workflowFile, cfg.Scanner.WorkflowRunsToScan)
-			if err != nil || run == nil {
+			if err != nil || len(runs) == 0 {
 				log.Warn().Msgf("No successful runs found for %s/%s", owner, repo)
 				continue
 			}
 
+			log.Info().Msgf("Scanning last %d successful runs", len(runs))
+
 			for _, run := range runs {
 				log.Debug().Str("Workflow", workflowFile).Int64("Run", run.GetID()).Msg("Processing run")
+				runsScanned[run.GetID()] = true
 
 				logURL, err := githubClient.GetJobLogs(owner, repo, run.GetID())
 				if err != nil {
@@ -123,7 +151,7 @@ func run() error {
 					continue
 				}
 
-				log.Debug().Int("logContent", len(logContent)).Msg("Fetched log content")
+				log.Info().Int("logContent", len(logContent)).Msgf("Fetched log content for run %d", run.GetID())
 
 				pattern := regexp.MustCompile(rule.Regex)
 				matches := pattern.FindStringSubmatch(logContent)
@@ -144,7 +172,9 @@ func run() error {
 						continue
 					}
 
-					log.Info().Msg("Found secret")
+					secretsFound[matches[1]] = true
+					log.Info().Msg("Found secret in build logs")
+
 					if err := outputClient.Write(owner, repo, workflowFile, run.GetID(), decoded); err != nil {
 						log.Warn().Msgf("Error writing secret: %v", err)
 					}
@@ -152,6 +182,8 @@ func run() error {
 			}
 		}
 	}
+
+	stdout.PrintSummary(orgScanned, repoScanned, workflowScanned, runsScanned, len(secretsFound))
 
 	return nil
 }
