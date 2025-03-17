@@ -116,7 +116,7 @@ func run() error {
 			orgScanned[owner] = true
 
 			repo := result.GetRepository().GetName()
-			repoScanned[repo] = true
+			repoScanned[fmt.Sprintf("%s/%s", owner, repo)] = true
 
 			workflowFile := strings.TrimPrefix(result.GetPath(), ".github/workflows/")
 			workflowScanned[workflowFile] = true
@@ -156,25 +156,31 @@ func run() error {
 					continue
 				}
 
+				secret := matches[1]
 				for _, dec := range rule.Decoders {
 					decoder, err := decoder.New(dec.Id)
 					if err != nil {
 						log.Warn().Msgf("Error creating decoder: %v", err)
-						continue
+						secret = ""
+						break
 					}
 
-					decoded, err := decoder.Decode(matches[1], dec.Repeat)
+					secret, err = decoder.Decode(secret, dec.Repeat)
 					if err != nil {
 						log.Warn().Msgf("Error decoding secret: %v", err)
-						continue
+						break
 					}
+				}
 
-					secretsFound[matches[1]] = true
-					log.Info().Msg("Found secret in build logs")
+				if secret == "" {
+					continue
+				}
 
-					if err := outputClient.Write(owner, repo, workflowFile, run.GetID(), decoded); err != nil {
-						log.Warn().Msgf("Error writing secret: %v", err)
-					}
+				secretsFound[secret] = true
+				log.Info().Msg("Found secret in build logs")
+
+				if err := outputClient.Write(owner, repo, workflowFile, run.GetID(), secret); err != nil {
+					log.Warn().Msgf("Error writing secret: %v", err)
 				}
 			}
 		}
