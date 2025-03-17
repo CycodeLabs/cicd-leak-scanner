@@ -23,17 +23,17 @@ func PrintSummary(orgScanned map[string]bool, repoScanned map[string]bool, workf
 	out := fmt.Sprintf("\n=========== Summary ===========\n")
 	out += fmt.Sprintf("Organizations Scanned: %d\n", len(orgScanned))
 	for org := range orgScanned {
-		out += fmt.Sprintf("	- %s\n", org)
+		out += fmt.Sprintf("  - %s\n", org)
 	}
 
 	out += fmt.Sprintf("Repositories Scanned: %d\n", len(repoScanned))
 	for repo := range repoScanned {
-		out += fmt.Sprintf("	- %s\n", repo)
+		out += fmt.Sprintf("  - %s\n", repo)
 	}
 
 	out += fmt.Sprintf("Workflows Scanned: %d\n", len(workflowScanned))
 	for workflow := range workflowScanned {
-		out += fmt.Sprintf("	- %s\n", workflow)
+		out += fmt.Sprintf("  - %s\n", workflow)
 	}
 
 	out += fmt.Sprintf("Workflow Runs Scanned: %d\n", len(runsScanned))
