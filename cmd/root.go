@@ -137,9 +137,15 @@ func run() error {
 
 				logURL, err := githubClient.GetJobLogs(owner, repo, run.GetID())
 				if err != nil {
+					if runLogErr, ok := err.(*github.WorkflowRunLogsExpiredError); ok {
+						log.Warn().Msg(runLogErr.Error())
+						break
+					}
+
 					log.Warn().Msgf("Error fetching log URL: %v", err)
 					continue
 				}
+
 				log.Debug().Msgf("Fetching logs from %s", logURL)
 
 				logContent, err := githubClient.GetJobLogsContent(logURL)
