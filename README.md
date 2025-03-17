@@ -66,6 +66,10 @@ rules:
 
 Contributions are welcome! Please open a pull request or an issue if you'd like to suggest improvements or report bugs.
 
+## Limitations
+
+* GitHub API Limit: GitHub's search and workflow run APIs return a maximum of `1000` results per query.
+
 ## License
 
 [Apache License 2.0](https://github.com/CycodeLabs/cicd-leak-scanner/blob/main/LICENSE.md)
