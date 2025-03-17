@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -15,7 +16,7 @@ import (
 )
 
 const (
-	maxRedirects = 5
+	maxRedirects = 3
 )
 
 type GitHub struct {
@@ -109,7 +110,19 @@ func (g *GitHub) GetLatestSuccessfulWorkflowRuns(ctx context.Context, owner, rep
 		})
 
 		if err != nil {
-			return nil, err
+			if rlErr, ok := err.(*github.RateLimitError); ok {
+				sleepDuration := time.Until(rlErr.Rate.Reset.Time)
+				if sleepDuration <= 0 {
+					sleepDuration = 1 * time.Second
+				}
+
+				log.Warn().Msgf("Rate limited, waiting for %v", sleepDuration)
+				time.Sleep(sleepDuration)
+				page--
+				continue
+			}
+
+			return nil, fmt.Errorf("Error fetching workflow runs: %v", err)
 		}
 
 		allRuns = append(allRuns, runs.WorkflowRuns...)
@@ -123,9 +136,13 @@ func (g *GitHub) GetLatestSuccessfulWorkflowRuns(ctx context.Context, owner, rep
 }
 
 func (g *GitHub) GetJobLogs(owner, repo string, runID int64) (string, error) {
-	url, _, err := g.client.Actions.GetWorkflowRunLogs(g.ctx, owner, repo, runID, maxRedirects)
+	url, res, err := g.client.Actions.GetWorkflowRunLogs(context.Background(), owner, repo, runID, maxRedirects)
+	if res.StatusCode == http.StatusGone {
+		return "", fmt.Errorf("Logs are no longer available for run %d", runID)
+	}
+
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Error fetching log URL: %v", err)
 	}
 
 	return url.String(), nil

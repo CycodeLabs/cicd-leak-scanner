@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/CycodeLabs/cicd-leak-scanner/pkg/output/file"
-	"github.com/CycodeLabs/cicd-leak-scanner/pkg/output/std"
+	"github.com/CycodeLabs/cicd-leak-scanner/pkg/output/stdout"
 )
 
 type Output interface {
@@ -31,7 +31,7 @@ func New(method string, opts ...Opts) (Output, error) {
 
 	switch method {
 	case "stdout":
-		return std.New()
+		return stdout.New()
 	case "file":
 		return file.New(cfg.Filename)
 	default:
