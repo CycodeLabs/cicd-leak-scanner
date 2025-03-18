@@ -49,7 +49,7 @@ Scan Specific Repository:
 
 ## Configuration
 
-The scanner uses a configuration file to define the rules for detecting leaks. The configuration file is located at `config.yaml` and can be customized to detect specific patterns or keywords.
+The scanner uses a configuration file to define the rules for detecting leaks. The configuration file is located at `config.yml` and can be customized to detect specific patterns or keywords.
 
 ``` yaml
 scanner:

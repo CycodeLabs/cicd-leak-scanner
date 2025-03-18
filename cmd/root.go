@@ -162,7 +162,7 @@ func run() error {
 					continue
 				}
 
-				secret := matches[1]
+				secret := matches[len(matches)-1]
 				for _, dec := range rule.Decoders {
 					decoder, err := decoder.New(dec.Id)
 					if err != nil {
